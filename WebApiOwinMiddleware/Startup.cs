@@ -15,13 +15,12 @@ namespace WebApiOwinMiddleware
         {
             var httpConfiguration = new HttpConfiguration();
 
-
-            app.UseIpFiltering(remoteAddress =>
-            {
-                var bytes = remoteAddress.GetAddressBytes();
-                bool addressToReject = bytes[0] != 192 && bytes[0] != 172 && bytes[0] != 10 && bytes[0] != 127 && bytes[0] != 0;
-                return addressToReject;
-            });
+            //app.UseIpFiltering(remoteAddress =>
+            //{
+            //    var bytes = remoteAddress.GetAddressBytes();
+            //    bool addressToReject = bytes[0] != 192 && bytes[0] != 172 && bytes[0] != 10 && bytes[0] != 127 && bytes[0] != 0;
+            //    return addressToReject;
+            //});
 
             app.UseHeaderFiltering(headers =>
             {
@@ -29,6 +28,8 @@ namespace WebApiOwinMiddleware
                 bool hasHeader = headers.TryGetValue("X-my-sample-header", out headerValues);
                 return !(hasHeader && headerValues != null && headerValues.Length > 0);
             });
+
+            app.UseSimpleBasicAuthentication();
 
             // Configure Web API Routes:
             // - Enable Attribute Mapping

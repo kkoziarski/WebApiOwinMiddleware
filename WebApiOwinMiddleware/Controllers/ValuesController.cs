@@ -12,9 +12,10 @@
         }
 
         // GET api/<controller>/5
+        [Authorize]
         public string Get(int id)
         {
-            return "value";
+            return "Hello, " + this.User.Identity.Name;
         }
 
         // POST api/<controller>
