@@ -102,7 +102,7 @@
   <ItemGroup>
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Extensions\OwinMiddlewareExtensions.cs" />
-    <Compile Include="OwinMiddlewares\SimpleBasicAuthenticationMiddleware.cs" />
+    <Compile Include="OwinMiddlewares\BasicAuthenticationMiddleware.cs" />
     <Compile Include="OwinMiddlewares\HeaderFilterMiddleware.cs" />
     <Compile Include="OwinMiddlewares\IpFilterMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

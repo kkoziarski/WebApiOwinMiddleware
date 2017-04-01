@@ -1,34 +1,41 @@
 ﻿namespace WebApiOwinMiddleware.OwinMiddlewares
 {
     using System;
-    using System.Collections.Generic;
     using System.Security.Claims;
+    using System.Security.Principal;
     using System.Text;
     using System.Threading.Tasks;
+
     using Microsoft.Owin;
 
-    /// <summary>
-    /// Use <see cref="BasicAuthMiddleware" /> instead. The improved version
-    /// </summary>
-    public class SimpleBasicAuthenticationMiddleware : OwinMiddleware
+    public class BasicAuthenticationMiddleware : OwinMiddleware
     {
         public const string AuthMode = "Basic";
 
-        public SimpleBasicAuthenticationMiddleware(OwinMiddleware next) : base(next)
-        { }
+        private readonly Func<string, string, Task<IIdentity>> indentityVerificationCallback;
+
+        public BasicAuthenticationMiddleware(OwinMiddleware next)
+            : base(next)
+        {}
+
+        public BasicAuthenticationMiddleware(OwinMiddleware next, Func<string, string, Task<IIdentity>> validationCallback)
+            : this(next)
+        {
+            this.indentityVerificationCallback = validationCallback;
+        }
 
         public override async Task Invoke(IOwinContext context)
         {
-            var response = context.Response;
             var request = context.Request;
+            var response = context.Response;
 
             response.OnSendingHeaders(state =>
             {
-                var resp = (OwinResponse)state;
+                var resp = (IOwinResponse)state;
 
                 if (resp.StatusCode == 401)
                 {
-                    resp.Headers.Set("WWW-Authenticate", AuthMode);
+                    resp.Headers["WWW-Authenticate"] = AuthMode;
                 }
 
                 // resp.Headers.Set("X-MyResponse-Header", "Some Value");
@@ -36,7 +43,7 @@
                 // resp.ReasonPhrase = "Forbidden";
             }, response);
 
-            var authorizationHeaderRaw = context.Request.Headers["Authorization"];
+            var authorizationHeaderRaw = request.Headers["Authorization"];
 
             if (!string.IsNullOrWhiteSpace(authorizationHeaderRaw))
             {
@@ -44,12 +51,21 @@
 
                 if (AuthMode.Equals(authHeader.Scheme, StringComparison.OrdinalIgnoreCase))
                 {
-                    string parameter = Encoding.UTF8.GetString(Convert.FromBase64String(authHeader.Parameter));
+                    var parameter = Encoding.UTF8.GetString(Convert.FromBase64String(authHeader.Parameter));
                     var parts = parameter.Split(':');
 
-                    string userName = parts[0];
-                    string password = parts[1];
+                    var userName = parts[0];
+                    var password = parts[1];
 
+                    if (this.indentityVerificationCallback != null)
+                    {
+                        var identity = await this.indentityVerificationCallback(userName, password);
+                        if (identity != null)
+                        {
+                            request.User = new ClaimsPrincipal(identity);
+                        }
+                    }
+                    /*
                     if (userName == password) // Just a dumb check
                     {
                         var claims = new[]
@@ -61,23 +77,12 @@
                         var identity = new ClaimsIdentity(claims, AuthMode);
 
                         request.User = new ClaimsPrincipal(identity);
-                    }
+                    } 
+                    */
                 }
             }
 
             await this.Next.Invoke(context);
-        }
-
-        private void SingIn(IOwinContext context)
-        {
-            // user login
-            var claims = new List<Claim>();
-            claims.Add(new Claim(ClaimTypes.Name, "kk"));
-            claims.Add(new Claim(ClaimTypes.Email, "kk@kk.com"));
-
-            var id = new ClaimsIdentity(claims, "cookie");
-
-            context.Authentication.SignIn(id);
         }
     }
 }

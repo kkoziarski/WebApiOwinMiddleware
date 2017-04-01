@@ -3,6 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Security.Principal;
+    using System.Threading.Tasks;
 
     using Microsoft.Owin.Extensions;
 
@@ -24,11 +26,17 @@
             return appBuilder;
         }
 
-        public static IAppBuilder UseSimpleBasicAuthentication(this IAppBuilder appBuilder)
+        public static IAppBuilder UseBasicAuthentication(this IAppBuilder app, Func<string /* username */, string /* password */, Task<IIdentity>> validationCallback)
         {
-            appBuilder.Use(typeof(SimpleBasicAuthenticationMiddleware));
-            appBuilder.UseStageMarker(PipelineStage.Authenticate);
-            return appBuilder;
+            app.Use<BasicAuthenticationMiddleware>(validationCallback);
+            return app.UseStageMarker(PipelineStage.Authenticate);
         }
+
+        //public static IAppBuilder UseSimpleBasicAuthentication(this IAppBuilder appBuilder)
+        //{
+        //    appBuilder.Use(typeof(SimpleBasicAuthenticationMiddleware));
+        //    appBuilder.UseStageMarker(PipelineStage.Authenticate);
+        //    return appBuilder;
+        //}
     }
 }

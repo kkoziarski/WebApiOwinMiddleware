@@ -5,9 +5,13 @@ using Owin;
 
 namespace WebApiOwinMiddleware
 {
+    using System.Security.Claims;
+    using System.Security.Principal;
+    using System.Threading.Tasks;
     using System.Web.Http;
 
     using WebApiOwinMiddleware.Extensions;
+    using WebApiOwinMiddleware.OwinMiddlewares;
 
     public class Startup
     {
@@ -29,7 +33,9 @@ namespace WebApiOwinMiddleware
                 return !(hasHeader && headerValues != null && headerValues.Length > 0);
             });
 
-            app.UseSimpleBasicAuthentication();
+            //app.UseSimpleBasicAuthentication();
+
+            app.UseBasicAuthentication(this.LogOn);
 
             // Configure Web API Routes:
             // - Enable Attribute Mapping
@@ -42,6 +48,23 @@ namespace WebApiOwinMiddleware
             );
 
             app.UseWebApi(httpConfiguration);
+        }
+
+        private Task<IIdentity> LogOn(string userName, string password)
+        {
+            if (userName == password) // Just a dumb check
+            {
+                var claims = new[]
+                {
+                        new Claim(ClaimTypes.Name, userName),
+                        new Claim(ClaimTypes.Email, "some-username@some-email.com")
+                    };
+
+                var identity = new ClaimsIdentity(claims, BasicAuthenticationMiddleware.AuthMode);
+                return Task.FromResult<IIdentity>(identity);
+            }
+
+            return Task.FromResult<IIdentity>(null);
         }
     }
 }
