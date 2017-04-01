@@ -101,6 +101,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ValuesController.cs" />
+    <Compile Include="Extensions\OwinMiddlewareExtensions.cs" />
+    <Compile Include="OwinMiddlewares\IpFilterMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
