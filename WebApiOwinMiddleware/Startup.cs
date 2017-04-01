@@ -23,6 +23,13 @@ namespace WebApiOwinMiddleware
                 return addressToReject;
             });
 
+            app.UseHeaderFiltering(headers =>
+            {
+                string[] headerValues;
+                bool hasHeader = headers.TryGetValue("X-my-sample-header", out headerValues);
+                return !(hasHeader && headerValues != null && headerValues.Length > 0);
+            });
+
             // Configure Web API Routes:
             // - Enable Attribute Mapping
             // - Enable Default routes at /api.
