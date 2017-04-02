@@ -59,7 +59,7 @@ namespace WebApiOwinMiddleware
 
         private Task<IIdentity> LogOn(string userName, string password)
         {
-            if (userName == password) // Just a dumb check
+            if (userName == SettingsProvider.ApiUserName && password == SettingsProvider.ApiPassword)
             {
                 var claims = new[]
                 {
