@@ -6,47 +6,48 @@
     using System.IO;
     using System.Text;
     using System.Threading.Tasks;
-    using AppFunc = System.Func<System.Collections.Generic.IDictionary<string, object>, System.Threading.Tasks.Task>;
 
-    public class HeaderFilterMiddleware
+    using Microsoft.Owin;
+
+    using AcceptRequestFunc = System.Func<Microsoft.Owin.IHeaderDictionary, bool>;
+
+    public class HeaderFilterMiddleware : OwinMiddleware
     {
         private const string Html404 = "<!doctype html><html><head><meta charset=\"utf-8\"><title>404 Not Found</title></head><body>The resource cannot be found. Incorrect header.</body></html>";
 
-        private readonly AppFunc nextMiddleware;
+        private readonly AcceptRequestFunc acceptRequestFunc;
 
-        private readonly Func<IDictionary<string, string[]>, bool> acceptRequest;
-
-        public HeaderFilterMiddleware(AppFunc nextMiddleware, Func<IDictionary<string, string[]>, bool> acceptRequest)
+        public HeaderFilterMiddleware(OwinMiddleware next)
+            : base(next)
         {
-            if (nextMiddleware == null)
-            {
-                throw new ArgumentNullException("nextMiddleware");
-            }
-
-            this.nextMiddleware = nextMiddleware;
-            this.acceptRequest = acceptRequest;
         }
 
-        public Task Invoke(IDictionary<string, object> requestContext)
+        public HeaderFilterMiddleware(OwinMiddleware next, AcceptRequestFunc acceptRequest)
+            : this(next)
         {
-            var headers = (IDictionary<string, string[]>)requestContext["owin.RequestHeaders"];
-            if (!this.acceptRequest(headers))
+            this.acceptRequestFunc = acceptRequest;
+        }
+
+        public override async Task Invoke(IOwinContext context)
+        {
+            var request = context.Request;
+            var response = context.Response;
+            var headers = context.Request.Headers;
+            if (!this.acceptRequestFunc(headers))
             {
-                var responseStream = (Stream)requestContext["owin.ResponseBody"];
-                var responseHeaders = (IDictionary<string, string[]>)requestContext["owin.ResponseHeaders"];
 
-
+                var responseStream = response.Body;
                 var responseBytes = Encoding.UTF8.GetBytes(Html404);
 
-                responseHeaders["Content-Type"] = new[] { "text/html" };
-                responseHeaders["Content-Length"] = new[] { responseBytes.Length.ToString(CultureInfo.InvariantCulture) };
+                response.Headers.Set("Content-Type", "text/html");
+                response.Headers.Set("Content-Length", responseBytes.Length.ToString(CultureInfo.InvariantCulture));
+                response.StatusCode = 404;
 
-                requestContext["owin.ResponseStatusCode"] = 404;
-
-                return responseStream.WriteAsync(responseBytes, 0, responseBytes.Length);
+                await responseStream.WriteAsync(responseBytes, 0, responseBytes.Length);
+                return;
             }
 
-            return this.nextMiddleware(requestContext);
+            await this.Next.Invoke(context);
         }
     }
 }

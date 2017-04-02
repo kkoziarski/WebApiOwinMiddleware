@@ -6,7 +6,6 @@ using Owin;
 namespace WebApiOwinMiddleware
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Security.Claims;
     using System.Security.Principal;
@@ -40,8 +39,6 @@ namespace WebApiOwinMiddleware
                 return true;
             });
 
-            //app.UseSimpleBasicAuthentication();
-
             app.UseBasicAuthentication(this.LogOn);
 
             // Configure Web API Routes:
@@ -74,7 +71,7 @@ namespace WebApiOwinMiddleware
             return Task.FromResult<IIdentity>(null);
         }
 
-        private bool ValidateTokenHeader(IDictionary<string, string[]>  headers)
+        private bool ValidateTokenHeader(Microsoft.Owin.IHeaderDictionary headers)
         {
             string[] headerValues;
             bool hasHeader = headers.TryGetValue(SettingsProvider.TokenHeaderName, out headerValues);

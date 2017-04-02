@@ -20,7 +20,7 @@
             return appBuilder;
         }
 
-        public static IAppBuilder UseHeaderFiltering(this IAppBuilder appBuilder, Func<IDictionary<string, string[]>, bool> rejectRequest)
+        public static IAppBuilder UseHeaderFiltering(this IAppBuilder appBuilder, Func<Microsoft.Owin.IHeaderDictionary, bool> rejectRequest)
         {
             appBuilder.Use(typeof(HeaderFilterMiddleware), rejectRequest);
             return appBuilder;
