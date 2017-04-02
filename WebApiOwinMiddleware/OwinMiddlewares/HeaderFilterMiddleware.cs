@@ -14,9 +14,9 @@
 
         private readonly AppFunc nextMiddleware;
 
-        private readonly Func<IDictionary<string, string[]>, bool> rejectRequest;
+        private readonly Func<IDictionary<string, string[]>, bool> acceptRequest;
 
-        public HeaderFilterMiddleware(AppFunc nextMiddleware, Func<IDictionary<string, string[]>, bool> rejectRequest)
+        public HeaderFilterMiddleware(AppFunc nextMiddleware, Func<IDictionary<string, string[]>, bool> acceptRequest)
         {
             if (nextMiddleware == null)
             {
@@ -24,13 +24,13 @@
             }
 
             this.nextMiddleware = nextMiddleware;
-            this.rejectRequest = rejectRequest;
+            this.acceptRequest = acceptRequest;
         }
 
         public Task Invoke(IDictionary<string, object> requestContext)
         {
             var headers = (IDictionary<string, string[]>)requestContext["owin.RequestHeaders"];
-            if (this.rejectRequest(headers))
+            if (!this.acceptRequest(headers))
             {
                 var responseStream = (Stream)requestContext["owin.ResponseBody"];
                 var responseHeaders = (IDictionary<string, string[]>)requestContext["owin.ResponseHeaders"];

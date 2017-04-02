@@ -5,11 +5,15 @@ using Owin;
 
 namespace WebApiOwinMiddleware
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Security.Claims;
     using System.Security.Principal;
     using System.Threading.Tasks;
     using System.Web.Http;
 
+    using WebApiOwinMiddleware.Configuration;
     using WebApiOwinMiddleware.Extensions;
     using WebApiOwinMiddleware.OwinMiddlewares;
 
@@ -28,9 +32,12 @@ namespace WebApiOwinMiddleware
 
             app.UseHeaderFiltering(headers =>
             {
-                string[] headerValues;
-                bool hasHeader = headers.TryGetValue("X-my-sample-header", out headerValues);
-                return !(hasHeader && headerValues != null && headerValues.Length > 0);
+                if (SettingsProvider.TokenHeaderFilteringEnabled)
+                {
+                    return this.ValidateTokenHeader(headers);
+                }
+
+                return true;
             });
 
             //app.UseSimpleBasicAuthentication();
@@ -65,6 +72,18 @@ namespace WebApiOwinMiddleware
             }
 
             return Task.FromResult<IIdentity>(null);
+        }
+
+        private bool ValidateTokenHeader(IDictionary<string, string[]>  headers)
+        {
+            string[] headerValues;
+            bool hasHeader = headers.TryGetValue(SettingsProvider.TokenHeaderName, out headerValues);
+            if (hasHeader && headerValues != null && headerValues.Any())
+            {
+                return string.Equals(headerValues.First(), SettingsProvider.TokenHeaderValue, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
         }
     }
 }

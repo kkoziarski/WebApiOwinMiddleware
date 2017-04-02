@@ -100,6 +100,7 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\SettingsProvider.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Extensions\OwinMiddlewareExtensions.cs" />
     <Compile Include="OwinMiddlewares\BasicAuthenticationMiddleware.cs" />
