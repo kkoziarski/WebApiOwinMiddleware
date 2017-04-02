@@ -100,11 +100,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\SettingsProvider.cs" />
-    <Compile Include="Controllers\OrderController.cs" />
+    <Compile Include="Controllers\OrdersController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Extensions\OwinMiddlewareExtensions.cs" />
     <Compile Include="OwinMiddlewares\BasicAuthenticationMiddleware.cs" />
