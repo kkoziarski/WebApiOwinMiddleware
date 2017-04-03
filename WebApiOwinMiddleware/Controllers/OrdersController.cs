@@ -113,13 +113,29 @@
             }
         }
 
-        // PATCH api/<controller>/name/30049d31-f29e-447e-a6c3-cff767b2dc6d/some-new-name
+        // PATCH api/<controller>30049d31-f29e-447e-a6c3-cff767b2dc6d/category
         [HttpPatch]
-        [Route("name/{id:Guid}")]
-        public IHttpActionResult UpdateName(Guid id, [FromBody]string name)
+        [Route("{id:Guid}/{field}")]
+        public IHttpActionResult UpdateName(Guid id, string field, [FromBody]object value)
         {
+            var order = this.ordersRepository.FindById(id);
+            if (order == null)
+            {
+                return this.NotFound();
+            }
+
+            switch (field.ToLower())
+            {
+                case "name":
+                    break;
+                case "category":
+                    break;
+                default:
+                    return this.BadRequest("'" + field + "' cannot be found.");
+            }
+
             // TODO: finish
-            return this.Ok(name);
+            return this.Ok(field + ":" + value);
         }
 
         [HttpPost]
