@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using Configuration;
     using LiteDB;
     using Models;
 
@@ -11,7 +12,7 @@
 
         public LocalRepository()
         {
-            this.DatabaseFilePath = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/appLite.db");
+            this.DatabaseFilePath = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/" + SettingsProvider.DBFileName);
         }
 
         public TEntity[] GetAll()

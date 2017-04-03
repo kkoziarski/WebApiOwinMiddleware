@@ -11,5 +11,6 @@
         public static string ApiUserName => System.Configuration.ConfigurationManager.AppSettings["ApiUserName"];
 
         public static string ApiPassword => System.Configuration.ConfigurationManager.AppSettings["ApiPassword"];
+        public static string DBFileName => System.Configuration.ConfigurationManager.AppSettings["DBFileName"];
     }
 }
