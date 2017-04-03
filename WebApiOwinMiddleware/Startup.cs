@@ -12,6 +12,7 @@ namespace WebApiOwinMiddleware
     using System.Threading.Tasks;
     using System.Web.Http;
 
+    using WebApiOwinMiddleware.App_Data;
     using WebApiOwinMiddleware.Configuration;
     using WebApiOwinMiddleware.Extensions;
     using WebApiOwinMiddleware.OwinMiddlewares;
@@ -31,7 +32,7 @@ namespace WebApiOwinMiddleware
 
             app.UseHeaderFiltering(headers =>
             {
-                if (SettingsProvider.TokenHeaderFilteringEnabled)
+                if (ConfigurationProvider.TokenHeaderFilteringEnabled)
                 {
                     return this.ValidateTokenHeader(headers);
                 }
@@ -52,11 +53,12 @@ namespace WebApiOwinMiddleware
             );
 
             app.UseWebApi(httpConfiguration);
+            this.SetupDatabase();
         }
 
         private Task<IIdentity> LogOn(string userName, string password)
         {
-            if (userName == SettingsProvider.ApiUserName && password == SettingsProvider.ApiPassword)
+            if (userName == ConfigurationProvider.ApiUserName && password == ConfigurationProvider.ApiPassword)
             {
                 var claims = new[]
                 {
@@ -74,13 +76,18 @@ namespace WebApiOwinMiddleware
         private bool ValidateTokenHeader(Microsoft.Owin.IHeaderDictionary headers)
         {
             string[] headerValues;
-            bool hasHeader = headers.TryGetValue(SettingsProvider.TokenHeaderName, out headerValues);
+            bool hasHeader = headers.TryGetValue(ConfigurationProvider.TokenHeaderName, out headerValues);
             if (hasHeader && headerValues != null && headerValues.Any())
             {
-                return string.Equals(headerValues.First(), SettingsProvider.TokenHeaderValue, StringComparison.OrdinalIgnoreCase);
+                return string.Equals(headerValues.First(), ConfigurationProvider.TokenHeaderValue, StringComparison.OrdinalIgnoreCase);
             }
 
             return false;
+        }
+
+        private void SetupDatabase()
+        {
+            DatabaseSetup.Initialize();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace WebApiOwinMiddleware.Configuration
 {
-    public static class SettingsProvider
+    public static class ConfigurationProvider
     {
         public static bool TokenHeaderFilteringEnabled => bool.Parse(System.Configuration.ConfigurationManager.AppSettings["TokenHeaderFilteringEnabled"]);
 

@@ -1,39 +1,37 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Http;
-
-namespace WebApiOwinMiddleware.Controllers
+﻿namespace WebApiOwinMiddleware.Controllers
 {
+    using System;
     using System.Net;
     using System.Net.Http;
-    using System.Threading.Tasks;
+    using System.Web.Http;
+
+    using WebApiOwinMiddleware.Models;
+    using WebApiOwinMiddleware.Repositories;
 
     [Authorize]
     [RoutePrefix("api/orders")]
     public class OrdersController : ApiController
     {
-        private static readonly List<Order> Orders = new List<Order>
+        private readonly IRepository<Order> ordersRepository;
+
+        public OrdersController()
         {
-            new Order { Id = 1, Name = "Order1", Category = "C1", DisplayGuid = new Guid("30049d31-f29e-447e-a6c3-cff767b2dc6d") },
-            new Order { Id = 2, Name = "Order2", Category = "C2", DisplayGuid = new Guid("145e9a65-7594-403d-a829-d20c089cafa0") },
-            new Order { Id = 3, Name = "Order3", Category = "C3", DisplayGuid = new Guid("ff74d120-36ee-4c96-9d48-3a6cd8804d94") },
-            new Order { Id = 4, Name = "Order4", Category = "C4", DisplayGuid = new Guid("4954c83c-0f22-4e41-a303-1e359d00d9b1") }
-        };
+            this.ordersRepository = new LocalRepository<Order>();
+        }
 
         // GET api/<controller>
         [HttpGet]
-        public List<Order> Get()
+        public Order[] Get()
         {
-            return Orders;
+            return this.ordersRepository.GetAll();
         }
 
-        // GET api/<controller>/5
+        // GET api/<controller>/30049d31-f29e-447e-a6c3-cff767b2dc6d
         [HttpGet]
-        [Route("{id:int}")]
-        public IHttpActionResult Get(int id)
+        [Route("{id:Guid}")]
+        public IHttpActionResult Get(Guid id)
         {
-            var order = Orders.SingleOrDefault(t => t.Id == id);
+            var order = this.ordersRepository.FindById(id);
             if (order != null)
             {
                 return this.Ok(order);
@@ -42,25 +40,12 @@ namespace WebApiOwinMiddleware.Controllers
             return this.NotFound();
         }
 
-        [HttpGet]
-        [Route("{guid:Guid}")]
-        public IHttpActionResult Get(Guid guid)
-        {
-            var order = Orders.SingleOrDefault(t => t.DisplayGuid == guid);
-            if (order != null)
-            {
-                return this.Ok(order);
-            }
-
-            return this.NotFound();
-        }
-
+        // HEAD api/<controller>/30049d31-f29e-447e-a6c3-cff767b2dc6d
         [HttpHead]
-        [Route("{id:int}")]
-        public IHttpActionResult Head(int id) // doesn't work yet
+        [Route("{id:Guid}")]
+        public IHttpActionResult Head(Guid id)
         {
-            var orderExists = Orders.Any(t => t.Id == id);
-
+            var orderExists = this.ordersRepository.Exists(id);
             if (orderExists)
             {
                 return this.Ok();
@@ -69,16 +54,15 @@ namespace WebApiOwinMiddleware.Controllers
             return this.NotFound();
         }
 
-        // POST api/<controller>
+        //// POST api/<controller>
         [HttpPost]
         public IHttpActionResult Create([FromBody]Order order)
         {
-            order.Id = Orders.Max(x => x.Id) + 1;
-            order.DisplayGuid = Guid.NewGuid();
-            Orders.Add(order);
-            bool added = true;
-            if (added)
+            try
             {
+                order.DateCreated = DateTime.Now;
+                this.ordersRepository.Add(order);
+
                 string url = this.Url.Link("DefaultApi", new { controller = "Orders", id = order.Id.ToString() });
                 return this.Created<Order>(url, order);
                 //return this.Created<Order>(this.Request.RequestUri + "/" + order.Id.ToString(), order);
@@ -90,46 +74,49 @@ namespace WebApiOwinMiddleware.Controllers
                 return msg; 
                 */
             }
-            else
+            catch
             {
                 return this.Conflict();
             }
         }
 
-        // PUT api/<controller>/5
+        // PUT api/<controller>/30049d31-f29e-447e-a6c3-cff767b2dc6d
         [HttpPut]
-        [Route("{id:int}")]
-        public IHttpActionResult Update(int id, [FromBody]Order order)
+        [Route("{id:Guid}")]
+        public IHttpActionResult Update(Guid id, [FromBody]Order order)
         {
-            var foundOrder = Orders.FirstOrDefault(t => t.Id == id);
+            var foundOrder = this.ordersRepository.FindById(id);
             if (foundOrder != null)
             {
                 foundOrder.Category = order.Category;
                 foundOrder.Name = order.Name;
+                this.ordersRepository.Update(foundOrder);
                 return this.Ok();
             }
 
             return this.NotFound();
         }
 
-        // DELETE api/<controller>/5
+        // DELETE api/<controller>/30049d31-f29e-447e-a6c3-cff767b2dc6d
         [HttpDelete]
-        [Route("{id:int}")]
-        public IHttpActionResult Delete(int id)
+        [Route("{id:Guid}")]
+        public IHttpActionResult Delete(Guid id)
         {
-            var foundOrder = Orders.FirstOrDefault(t => t.Id == id);
-            if (foundOrder != null)
+            try
             {
-                Orders.Remove(foundOrder);
+                this.ordersRepository.Delete(id);
                 return this.Ok();
             }
-
-            return this.NotFound();
+            catch
+            {
+                return this.NotFound();
+            }
         }
 
+        // PATCH api/<controller>/name/30049d31-f29e-447e-a6c3-cff767b2dc6d/some-new-name
         [HttpPatch]
-        [Route("name/{id}")]
-        public IHttpActionResult UpdateName(int id, [FromBody]string name)
+        [Route("name/{id:Guid}")]
+        public IHttpActionResult UpdateName(Guid id, [FromBody]string name)
         {
             // TODO: finish
             return this.Ok(name);
@@ -139,30 +126,28 @@ namespace WebApiOwinMiddleware.Controllers
         [Route("createLazy")]
         public HttpResponseMessage CreateLazy([FromBody] Order order)
         {
-            order.Id = Orders.Max(x => x.Id) + 1;
-            order.DisplayGuid = Guid.NewGuid();
-            Orders.Add(order);
-            bool added = true;
-            if (added)
+            try
             {
-                new System.Threading.Tasks.Task(
-                    () =>
-                        {
-                            // long creating operation and object is not created here yet
-                            System.Threading.Thread.Sleep(5000);
+                order.DateCreated = DateTime.Now;
+                this.ordersRepository.Add(order);
 
-                        }).Start();
+                new System.Threading.Tasks.Task(() =>
+                {
+                    // long creating operation and object is not created here yet
+                    System.Threading.Thread.Sleep(5000);
+
+                }).Start();
 
                 // return immediately with order location where it will be when created
                 var responseMessage = new HttpResponseMessage(HttpStatusCode.Accepted);
-                string url = this.Url.Link("DefaultApi", new { controller = "Orders", id = order.DisplayGuid.ToString() });
+                string url = this.Url.Link("DefaultApi", new { controller = "Orders", id = order.Id.ToString() });
                 responseMessage.Headers.Location = new Uri(url);
                 return responseMessage;
 
                 //string url = this.Url.Route("DefaultApi", new { controller = "Orders", id = order.DisplayGuid.ToString() });
                 //responseMessage.Headers.Location = new Uri(this.Request.RequestUri + "/" + order.DisplayGuid.ToString());
             }
-            else
+            catch
             {
                 return new HttpResponseMessage(HttpStatusCode.Conflict);
             }
@@ -185,16 +170,5 @@ namespace WebApiOwinMiddleware.Controllers
             Server: Kestrel
             */
         }
-    }
-
-    public class Order
-    {
-        public int Id { get; set; }
-
-        public string Name { get; set; }
-
-        public string Category { get; set; }
-
-        public Guid DisplayGuid { get; set; }
     }
 }

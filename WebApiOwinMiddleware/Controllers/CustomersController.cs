@@ -1,40 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Web.Http;
-
-namespace WebApiOwinMiddleware.Controllers
+﻿namespace WebApiOwinMiddleware.Controllers
 {
+    using System;
+    using System.Web.Http;
     using Models;
     using Repositories;
 
+    [Authorize]
     public class CustomersController : ApiController
     {
+        private readonly IRepository<Customer> customerRepository;
+
+        public CustomersController()
+        {
+            this.customerRepository = new LocalRepository<Customer>();
+        }
+
         // GET api/<controller>
         public IHttpActionResult Get()
         {
-            var repo = new CustomerRepository();
-            var customers = repo.GetAll();
+            var customers = this.customerRepository.GetAll();
 
             return this.Ok(customers);
         }
 
         // GET api/<controller>/5
-        public string Get(int id)
+        public IHttpActionResult Get(Guid id)
         {
-            var repo = new CustomerRepository();
-            var customer = new Customer
+            var customer = this.customerRepository.FindById(id);
+            if (customer != null)
             {
-                Name = "John Doe" + id,
-                Phones = new string[] { "8000-0000", "9000-0000" },
-                IsActive = true
-            };
+                return this.Ok(customer);
+            }
 
-            repo.Add(customer);
-
-            return "value";
+            return this.NotFound();
         }
 
         // POST api/<controller>

@@ -12,7 +12,23 @@
 
         public LocalRepository()
         {
-            this.DatabaseFilePath = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/" + SettingsProvider.DBFileName);
+            this.DatabaseFilePath = System.Web.Hosting.HostingEnvironment.MapPath("~/App_Data/" + ConfigurationProvider.DBFileName);
+        }
+
+        public TEntity FindById(Guid id)
+        {
+            using (var db = new LiteDatabase(this.DatabaseFilePath))
+            {
+                return db.GetCollection<TEntity>().FindById(id);
+            }
+        }
+
+        public bool Exists(Guid id)
+        {
+            using (var db = new LiteDatabase(this.DatabaseFilePath))
+            {
+                return db.GetCollection<TEntity>().FindById(id) != null;
+            }
         }
 
         public TEntity[] GetAll()
@@ -27,7 +43,11 @@
         {
             using (var db = new LiteDatabase(this.DatabaseFilePath))
             {
-                db.GetCollection<TEntity>().Insert(entity);
+                var addResult = db.GetCollection<TEntity>().Insert(entity);
+                if (addResult == null)
+                {
+                    throw new Exception("Entity not added");
+                }
             }
         }
 
@@ -53,6 +73,23 @@
                     throw new Exception("Entity not found");
                 }
             }
+        }
+
+        public void Delete(Guid id)
+        {
+            using (var db = new LiteDatabase(this.DatabaseFilePath))
+            {
+                var deleteResult = db.GetCollection<TEntity>().Delete(id);
+                if (!deleteResult)
+                {
+                    throw new Exception("Entity not found");
+                }
+            }
+        }
+
+        public LiteDatabase CreateDatabaseConnection()
+        {
+            return new LiteDatabase(this.DatabaseFilePath);
         }
     }
 }
