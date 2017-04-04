@@ -127,15 +127,17 @@
             switch (field.ToLower())
             {
                 case "name":
+                    order.Name = (string)value;
                     break;
                 case "category":
+                    order.Category = (string)value;
                     break;
                 default:
                     return this.BadRequest("'" + field + "' cannot be found.");
             }
 
-            // TODO: finish
-            return this.Ok(field + ":" + value);
+            this.ordersRepository.Update(order);
+            return this.Ok();
         }
 
         [HttpPost]
